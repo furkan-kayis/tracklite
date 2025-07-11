@@ -3,11 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function NewTicketForm({
+export function NewTicketForm({
   projectId,
-}: Readonly<{ projectId: string }>) {
+  members,
+}: Readonly<{
+  projectId: string;
+  members: { id: string; name: string | null }[];
+}>) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -16,7 +21,7 @@ export default function NewTicketForm({
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, projectId }),
+      body: JSON.stringify({ title, description, projectId, assigneeId }),
     });
 
     if (res.ok) {
@@ -46,6 +51,20 @@ export default function NewTicketForm({
         rows={3}
         required
       />
+
+      <select
+        value={assigneeId}
+        onChange={(e) => setAssigneeId(e.target.value)}
+        className="border px-3 py-2 rounded w-full"
+      >
+        <option value="">Unassigned</option>
+        {members.map((member) => (
+          <option key={member.id} value={member.id}>
+            {member.name || member.id}
+          </option>
+        ))}
+      </select>
+
       <button
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

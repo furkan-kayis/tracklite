@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 import { ProjectInvite } from "@/components/project-invite";
 import { TicketList } from "@/components/ticket-list";
-import NewTicketForm from "@/components/new-ticket-form";
+import { NewTicketForm } from "@/components/new-ticket-form";
 
 export default async function ProjectPage({
   params,
@@ -33,7 +33,7 @@ export default async function ProjectPage({
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{project.name}</h1>
-      <NewTicketForm projectId={project.id} />
+      <NewTicketForm projectId={project.id} members={project.members} />
 
       {project.ownerId === session.user.id && (
         <ProjectInvite projectId={project.id} members={project.members} />
