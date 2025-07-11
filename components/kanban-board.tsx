@@ -62,7 +62,13 @@ export function KanbanBoard({ tickets }: Readonly<Props>) {
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="flex gap-6">
         {columns.map((col) => (
-          <Droppable droppableId={col} key={col}>
+          <Droppable
+            isDropDisabled={false}
+            isCombineEnabled
+            ignoreContainerClipping
+            droppableId={col}
+            key={col}
+          >
             {(provided) => (
               <div
                 ref={provided.innerRef}
