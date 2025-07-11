@@ -1,11 +1,18 @@
 "use client";
 
+import { TicketStatus } from "@/app/generated/prisma";
 import { useState } from "react";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "react-beautiful-dnd";
 
 type Ticket = {
   id: string;
   title: string;
-  status: "OPEN" | "IN_PROGRESS" | "DONE";
+  status: TicketStatus;
 };
 
 type Props = {
@@ -17,49 +24,80 @@ const columns = ["OPEN", "IN_PROGRESS", "DONE"] as const;
 export function KanbanBoard({ tickets }: Readonly<Props>) {
   const [boardTickets, setBoardTickets] = useState<Ticket[]>(tickets);
 
-  // Simplified drag and drop handlers (for now just click buttons to change status)
+  function onDragEnd(result: DropResult) {
+    const { destination, source, draggableId } = result;
 
-  async function changeStatus(id: string, newStatus: (typeof columns)[number]) {
-    setBoardTickets((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
-    );
+    if (!destination) return;
 
-    await fetch(`/api/tickets/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    )
+      return;
+
+    // Find the ticket
+    const ticket = boardTickets.find((t) => t.id === draggableId);
+    if (!ticket) return;
+
+    // Update status if dropped in a different column
+    if (destination.droppableId !== ticket.status) {
+      const updatedTickets = boardTickets.map((t) =>
+        t.id === draggableId
+          ? { ...t, status: destination.droppableId as Ticket["status"] }
+          : t
+      );
+
+      setBoardTickets(updatedTickets);
+
+      // Call backend API to update status
+      fetch(`/api/tickets/${draggableId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: destination.droppableId }),
+      });
+    }
   }
 
   return (
-    <div className="flex gap-6">
-      {columns.map((col) => (
-        <div key={col} className="flex-1 bg-gray-100 p-4 rounded">
-          <h3 className="font-semibold mb-4">{col.replace("_", " ")}</h3>
-          <div className="space-y-3">
-            {boardTickets
-              .filter((t) => t.status === col)
-              .map((ticket) => (
-                <div key={ticket.id} className="bg-white p-3 rounded shadow">
-                  <div>{ticket.title}</div>
-                  <div className="mt-2 space-x-1">
-                    {columns
-                      .filter((c) => c !== ticket.status)
-                      .map((c) => (
-                        <button
-                          key={c}
-                          onClick={() => changeStatus(ticket.id, c)}
-                          className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div className="flex gap-6">
+        {columns.map((col) => (
+          <Droppable droppableId={col} key={col}>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex-1 bg-gray-100 p-4 rounded min-h-[300px]"
+              >
+                <h3 className="font-semibold mb-4">{col.replace("_", " ")}</h3>
+
+                {boardTickets
+                  .filter((t) => t.status === col)
+                  .map((ticket, index) => (
+                    <Draggable
+                      draggableId={ticket.id}
+                      index={index}
+                      key={ticket.id}
+                    >
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="bg-white p-3 rounded shadow mb-3 cursor-move"
                         >
-                          Move to {c.replace("_", " ")}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      ))}
-    </div>
+                          {ticket.title}
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        ))}
+      </div>
+    </DragDropContext>
   );
 }
