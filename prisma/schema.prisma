@@ -25,6 +25,7 @@ model User {
   memberProjects  Project[] @relation("ProjectMembers")
   authoredTickets Ticket[]  @relation("TicketAuthor")
   assignedTickets Ticket[]  @relation("TicketAssignee")
+  Comment         Comment[]
 }
 
 model Project {
@@ -55,4 +56,17 @@ model Ticket {
   assigneeId  String?
   assignee    User?        @relation("TicketAssignee", fields: [assigneeId], references: [id])
   createdAt   DateTime     @default(now())
+  comments    Comment[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+  ticketId String
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
 }
