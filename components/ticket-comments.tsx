@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function TicketComments({
+export function TicketComments({
   ticketId,
   comments,
 }: Readonly<{

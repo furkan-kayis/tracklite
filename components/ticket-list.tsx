@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Ticket, User } from "@/app/generated/prisma";
 import { TicketStatus } from "@/lib/constants";
 import { StatusToggle } from "@/components/status-toggle";
+import Link from "next/link";
 
 interface Props {
   tickets: (Ticket & { assignee: User | null })[];
@@ -46,7 +47,12 @@ export function TicketList({ tickets }: Readonly<Props>) {
               className="p-3 border rounded flex justify-between items-center"
             >
               <div>
-                <div className="font-medium">{ticket.title}</div>
+                <Link
+                  href={`/tickets/${ticket.id}`}
+                  className="font-medium hover:underline"
+                >
+                  {ticket.title}
+                </Link>
                 <div className="text-sm text-gray-600">
                   {ticket.description}
                 </div>
