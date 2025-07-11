@@ -4,6 +4,7 @@ import { TicketComments } from "@/components/ticket-comments";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import { UpdateTicketStatus } from "@/components/update-ticket-status";
 
 export default async function TicketDetailPage({
   params,
@@ -41,11 +42,12 @@ export default async function TicketDetailPage({
       <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
 
       <div className="text-sm text-gray-600">
-        <div>
-          Status:{" "}
-          <span className="inline-block px-2 py-1 text-white rounded bg-gray-500">
-            {ticket.status}
-          </span>
+        <div className="flex items-center gap-2">
+          <span>Status:</span>
+          <UpdateTicketStatus
+            ticketId={ticket.id}
+            currentStatus={ticket.status}
+          />
         </div>
         <div>Assigned to: {ticket.assignee?.name || "Unassigned"}</div>
         <div>Project: {ticket.project.name}</div>

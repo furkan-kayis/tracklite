@@ -25,7 +25,7 @@ model User {
   memberProjects  Project[] @relation("ProjectMembers")
   authoredTickets Ticket[]  @relation("TicketAuthor")
   assignedTickets Ticket[]  @relation("TicketAssignee")
-  Comment         Comment[]
+  comments        Comment[]
 }
 
 model Project {
