@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ticket, User } from "@/app/generated/prisma";
-import { TicketStatus } from "@/lib/constants";
+import { Ticket, TicketStatus, User } from "@/app/generated/prisma";
 import { StatusToggle } from "@/components/status-toggle";
 import Link from "next/link";
 
