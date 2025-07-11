@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { ProjectInvite } from "@/components/project-invite";
 import { TicketList } from "@/components/ticket-list";
 import { NewTicketForm } from "@/components/new-ticket-form";
+import { KanbanBoard } from "@/components/kanban-board";
 
 export default async function ProjectPage({
   params,
@@ -40,6 +41,8 @@ export default async function ProjectPage({
       )}
 
       <TicketList tickets={project.tickets} />
+
+      <KanbanBoard tickets={project.tickets} />
     </div>
   );
 }
