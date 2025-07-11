@@ -1,28 +1,42 @@
 import prisma from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { notFound, redirect } from "next/navigation";
 import { ProjectInvite } from "@/components/project-invite";
 import { TicketList } from "@/components/ticket-list";
-import { notFound } from "next/navigation";
 
 export default async function ProjectPage({
   params,
 }: {
   params: { id: string };
 }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return redirect("/login");
+
   const project = await prisma.project.findUnique({
     where: { id: params.id },
     include: {
-      tickets: { include: { assignee: true } },
       members: true,
+      tickets: { include: { assignee: true } },
     },
   });
 
   if (!project) return notFound();
 
+  const isMember =
+    project.ownerId === session.user.id ||
+    project.members.some((m) => m.id === session.user.id);
+
+  if (!isMember) return redirect("/unauthorized");
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{project.name}</h1>
 
-      <ProjectInvite projectId={project.id} members={project.members} />
+      {project.ownerId === session.user.id && (
+        <ProjectInvite projectId={project.id} members={project.members} />
+      )}
+
       <TicketList tickets={project.tickets} />
     </div>
   );
