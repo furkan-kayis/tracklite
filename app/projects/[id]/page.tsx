@@ -1,55 +1,77 @@
-import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import Link from "next/link";
+"use client";
 
-interface Props {
-  params: { id: string };
-}
+import { useState } from "react";
 
-export default async function ProjectPage({ params }: Props) {
-  const session = await getServerSession(authOptions);
-  const project = await prisma.project.findUnique({
-    where: { id: params.id },
-    include: {
-      tickets: {
-        orderBy: { createdAt: "desc" },
-        include: { assignee: true },
-      },
-      members: true,
-    },
-  });
+export default function ProjectInvite({
+  projectId,
+  members,
+}: {
+  projectId: string;
+  members: { id: string; email: string; name: string }[];
+}) {
+  const [email, setEmail] = useState("");
+  const [searchResults, setSearchResults] = useState<
+    { id: string; email: string; name: string }[]
+  >([]);
+  const [message, setMessage] = useState("");
 
-  if (!project || project.ownerId !== session?.user?.id) {
-    return (
-      <div className="p-4 text-red-600">Project not found or unauthorized</div>
-    );
-  }
+  const searchUsers = async () => {
+    if (!email) return;
+    const res = await fetch(`/api/users/search?email=${email}`);
+    const data = await res.json();
+    setSearchResults(data.users || []);
+  };
+
+  const inviteUser = async (userId: string) => {
+    const res = await fetch(`/api/projects/${projectId}/add-member`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      setMessage("User invited successfully!");
+      setSearchResults([]);
+      setEmail("");
+    } else {
+      setMessage("Failed to invite user.");
+    }
+  };
 
   return (
-    <main className="max-w-3xl mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-4">{project.name}</h1>
-      <Link
-        href={`/projects/${params.id}/new-ticket`}
-        className="underline text-blue-600"
+    <div className="mt-8 border-t pt-6">
+      <h3 className="text-lg font-semibold mb-2">Invite Member</h3>
+      <input
+        type="email"
+        placeholder="Enter user email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="border p-2 rounded w-full"
+      />
+      <button
+        onClick={searchUsers}
+        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
       >
-        + New Ticket
-      </Link>
+        Search
+      </button>
 
-      <h2 className="mt-8 mb-2 font-semibold text-lg">Tickets</h2>
-      <ul className="space-y-2">
-        {project.tickets.map((ticket) => (
-          <li key={ticket.id} className="p-3 border rounded">
-            <div className="font-medium">{ticket.title}</div>
-            <div className="text-sm text-gray-600">{ticket.status}</div>
-            {ticket.assignee && (
-              <div className="text-sm text-gray-500">
-                Assigned to: {ticket.assignee.name}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    </main>
+      {searchResults.length > 0 && (
+        <ul className="mt-4 border rounded max-h-40 overflow-auto">
+          {searchResults.map((user) => (
+            <li key={user.id} className="p-2 flex justify-between items-center">
+              <span>{user.name || user.email}</span>
+              <button
+                className="text-blue-700 underline"
+                onClick={() => inviteUser(user.id)}
+              >
+                Invite
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {message && <p className="mt-2 text-green-600">{message}</p>}
+    </div>
   );
 }
