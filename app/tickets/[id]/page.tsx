@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { UpdateTicketStatus } from "@/components/update-ticket-status";
+import { EditTicketForm } from "@/components/edit-ticket-form";
 
 export default async function TicketDetailPage({
   params,
@@ -39,7 +40,13 @@ export default async function TicketDetailPage({
 
       <h1 className="text-2xl font-bold">{ticket.title}</h1>
 
-      <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+      <EditTicketForm
+        ticket={{
+          id: ticket.id,
+          title: ticket.title,
+          description: ticket.description,
+        }}
+      />
 
       <div className="text-sm text-gray-600">
         <div className="flex items-center gap-2">
