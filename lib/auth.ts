@@ -2,7 +2,8 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
 import prisma from "@/lib/prisma";
-import { SessionStrategy } from "next-auth";
+import { Session, SessionStrategy, User } from "next-auth";
+import { JWT } from "next-auth/jwt";
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -34,6 +35,22 @@ export const authOptions = {
     }),
   ],
   session: { strategy: "jwt" as SessionStrategy },
+  callbacks: {
+    async session({
+      session,
+      token,
+      user,
+    }: {
+      session: Session;
+      token: JWT;
+      user: User | undefined;
+    }) {
+      if (session.user) {
+        session.user.id = user?.id ?? token.sub ?? "";
+      }
+      return session;
+    },
+  },
   pages: {
     signIn: "/login",
   },
