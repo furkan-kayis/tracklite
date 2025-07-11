@@ -1,9 +1,11 @@
-import NextAuth from "next-auth";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
 import prisma from "@/lib/prisma";
+import { SessionStrategy } from "next-auth";
 
-const handler = NextAuth({
+export const authOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -23,14 +25,16 @@ const handler = NextAuth({
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) return null;
 
-        return { id: user.id, name: user.name, email: user.email };
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        };
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt" as SessionStrategy },
   pages: {
     signIn: "/login",
   },
-});
-
-export { handler as GET, handler as POST };
+};
