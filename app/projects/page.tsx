@@ -2,12 +2,13 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
+import { StatusToggle } from "@/components/status-toggle";
 
 interface Props {
   params: { id: string };
 }
 
-export default async function ProjectPage({ params }: Props) {
+export default async function ProjectPage({ params }: Readonly<Props>) {
   const session = await getServerSession(authOptions);
   const project = await prisma.project.findUnique({
     where: { id: params.id },
@@ -47,6 +48,8 @@ export default async function ProjectPage({ params }: Props) {
                 Assigned to: {ticket.assignee.name}
               </div>
             )}
+
+            <StatusToggle ticketId={ticket.id} currentStatus={ticket.status} />
           </li>
         ))}
       </ul>
