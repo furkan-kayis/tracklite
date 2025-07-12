@@ -45,13 +45,11 @@ function createMockRequest(body: unknown): Request {
 
 describe("PATCH /api/tickets/[id]", () => {
   it("updates ticket status and returns ok", async () => {
-    // Arrange: setup findUnique to return a ticket owned by user-1
     (prisma.ticket.findUnique as Mock).mockResolvedValue({
       id: "123",
       project: { ownerId: "user-1" },
     });
 
-    // Arrange: setup update to return the updated ticket
     (prisma.ticket.update as Mock).mockResolvedValue({
       id: "123",
       status: "IN_PROGRESS",
@@ -60,16 +58,13 @@ describe("PATCH /api/tickets/[id]", () => {
     const mockReq = createMockRequest({ status: "IN_PROGRESS" });
     const params = { params: { id: "123" } };
 
-    // Act
     const res = await handler.PATCH(mockReq, params);
 
-    // Assert prisma update was called with correct params
     expect(prisma.ticket.update).toHaveBeenCalledWith({
       where: { id: "123" },
       data: { status: "IN_PROGRESS" },
     });
 
-    // Assert response status and body
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data).toEqual({ ok: true });
@@ -109,6 +104,32 @@ describe("PATCH /api/tickets/[id]", () => {
     expect(data).toEqual({ error: "Unauthorized" });
 
     expect(prisma.ticket.findUnique).not.toHaveBeenCalled();
+    expect(prisma.ticket.update).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 if request body is empty", async () => {
+    const { getServerSession } = await import("next-auth");
+    (getServerSession as Mock).mockResolvedValue({
+      user: {
+        id: "user-1",
+      },
+    });
+    const mockReq = createMockRequest({});
+    const params = { params: { id: "123" } };
+
+    (prisma.ticket.findUnique as Mock).mockResolvedValue({
+      id: "123",
+      project: {
+        ownerId: "user-1",
+      },
+    });
+
+    const res = await handler.PATCH(mockReq, params);
+
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data).toEqual({ error: "Invalid data" });
+
     expect(prisma.ticket.update).not.toHaveBeenCalled();
   });
 });
