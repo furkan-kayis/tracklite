@@ -2,6 +2,10 @@ import * as handler from "@/app/api/tickets/[id]/route";
 import prisma from "@/lib/prisma";
 import { vi, describe, it, expect, Mock } from "vitest";
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 vi.mock("@/lib/prisma", () => ({
   default: {
     ticket: {
@@ -69,5 +73,25 @@ describe("PATCH /api/tickets/[id]", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data).toEqual({ ok: true });
+  });
+
+  it("returns 403 if user does not own the ticket's project", async () => {
+    const mockReq = createMockRequest({ status: "DONE" });
+    const params = { params: { id: "not-owned-id" } };
+
+    (prisma.ticket.findUnique as Mock).mockResolvedValue({
+      id: "not-owned-id",
+      project: {
+        ownerId: "someone-else",
+      },
+    });
+
+    const res = await handler.PATCH(mockReq, params);
+
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data).toEqual({ error: "Forbidden" });
+
+    expect(prisma.ticket.update).not.toHaveBeenCalled();
   });
 });
