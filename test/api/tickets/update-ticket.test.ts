@@ -94,4 +94,21 @@ describe("PATCH /api/tickets/[id]", () => {
 
     expect(prisma.ticket.update).not.toHaveBeenCalled();
   });
+
+  it("returns 401 if user is not authenticated", async () => {
+    const { getServerSession } = await import("next-auth");
+    (getServerSession as Mock).mockResolvedValue(null);
+
+    const mockReq = createMockRequest({ status: "DONE" });
+    const params = { params: { id: "123" } };
+
+    const res = await handler.PATCH(mockReq, params);
+
+    expect(res.status).toBe(401);
+    const data = await res.json();
+    expect(data).toEqual({ error: "Unauthorized" });
+
+    expect(prisma.ticket.findUnique).not.toHaveBeenCalled();
+    expect(prisma.ticket.update).not.toHaveBeenCalled();
+  });
 });
